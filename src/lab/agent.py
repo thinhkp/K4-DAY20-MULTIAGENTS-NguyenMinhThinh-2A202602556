@@ -3,13 +3,16 @@
 Pseudo-code: guides/pseudocode/01_agent.md
 Kiểm tra:    pytest tests/test_02_agent.py
 """
+import os
+import shutil
+import sys
 from pathlib import Path
 
-# TODO 1: import các thành phần cần dùng, ví dụ:
-#   from deepagents import create_deep_agent
-#   from deepagents.backends import LocalShellBackend
-#   from .model import make_model
-#   from .subagents import get_subagents
+from deepagents import create_deep_agent
+from deepagents.backends import LocalShellBackend
+
+from .model import make_model
+from .subagents import get_subagents
 
 # ---- CÓ SẴN, KHÔNG SỬA: system prompt dùng chung cho mọi sinh viên (để đường cơ sở so sánh được) ----
 PATHS_NOTE = (
@@ -47,7 +50,43 @@ def make_backend(sandbox: Path):
       - Tác tử chạy được lệnh shell và gọi được `python` (cần đặt PATH).
       - KHÔNG chuyển biến môi trường của bạn vào shell của tác tử (khóa API không được lộ).
     """
-    raise NotImplementedError("TODO 2: cài đặt make_backend (xem guides/pseudocode/01_agent.md)")
+    sandbox = Path(sandbox).resolve()
+    # Preserve the virtual-environment path when sys.executable is a symlink
+    # (common on Linux); resolving it would point back to the system Python.
+    python_dir = str(Path(sys.executable).parent)
+    if os.name == "nt":
+        system_root = os.environ.get("SystemRoot", r"C:\Windows")
+        path_entries = [
+            python_dir,
+            str(Path(system_root) / "System32"),
+            system_root,
+        ]
+        # Git for Windows supplies the small POSIX utility set used by the lab
+        # (which, env, cat, ls). Keep the backend's environment isolated while
+        # making those commands available to its Windows command shell.
+        git_executable = shutil.which("git")
+        if git_executable:
+            git_root = Path(git_executable).resolve().parent.parent
+            path_entries.extend(str(git_root / part) for part in ("usr/bin", "bin"))
+    else:
+        path_entries = [python_dir, "/usr/local/bin", "/usr/bin", "/bin"]
+
+    # Do not inherit the host environment: in particular, API credentials must
+    # never be visible to commands run by the agent.
+    env = {
+        "PATH": os.pathsep.join(path_entries),
+        "HOME": str(sandbox),
+        "PYTHONDONTWRITEBYTECODE": "1",
+    }
+    if os.name == "nt":
+        env["SYSTEMROOT"] = system_root
+    return LocalShellBackend(
+        root_dir=sandbox,
+        virtual_mode=True,
+        inherit_env=False,
+        env=env,
+        timeout=120,
+    )
 
 
 def build_agent(sandbox: Path, mode: str = "single", use_skills: bool = False, model=None):
@@ -64,4 +103,26 @@ def build_agent(sandbox: Path, mode: str = "single", use_skills: bool = False, m
     mode không hợp lệ -> ném ValueError.
     Trả về: đồ thị (graph) đã biên dịch, gọi bằng `.invoke({"messages": [...]})`.
     """
-    raise NotImplementedError("TODO 3: cài đặt build_agent (xem guides/pseudocode/01_agent.md)")
+    if mode not in {"single", "subagents"}:
+        raise ValueError(f"unknown agent mode: {mode}")
+
+    prompt = BASE_PROMPT
+    kwargs = {}
+
+    if mode == "subagents":
+        kwargs["subagents"] = [
+            {**subagent, "system_prompt": subagent["system_prompt"] + " " + PATHS_NOTE}
+            for subagent in get_subagents()
+        ]
+        prompt += SUBAGENTS_NOTE
+
+    if use_skills:
+        kwargs["skills"] = ["/skills/"]
+        prompt += SKILLS_NOTE
+
+    return create_deep_agent(
+        model=model if model is not None else make_model(),
+        system_prompt=prompt,
+        backend=make_backend(sandbox),
+        **kwargs,
+    )
