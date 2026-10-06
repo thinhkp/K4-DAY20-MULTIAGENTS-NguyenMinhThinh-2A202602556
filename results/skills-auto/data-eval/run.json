@@ -1,0 +1,69 @@
+{
+  "task": "data-eval",
+  "condition": "skills-auto",
+  "role": "eval",
+  "error": "OpenAIRateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01m3mbpp71eq6atjfx62farapb` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 199785, Requested 3098. Please try again in 20m45.456s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+  "timestamp": "2026-10-06T16:03:02.844171+00:00",
+  "skills_sha256": "1e1e80b72df0d233eaf9188d0ecd10344199f0e5b3926ec58ab7ecd37cab2568",
+  "seconds": 0.3,
+  "tokens": {
+    "input": 0,
+    "output": 0,
+    "total": 0
+  },
+  "tool_calls": 0,
+  "subagent_calls": 0,
+  "skills_read": 0,
+  "skills_modified": false,
+  "final_message": "",
+  "score": 0.0,
+  "passed": 0,
+  "total": 9,
+  "checks": [
+    {
+      "name": "march_revenue_utc",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "march_orders_utc",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "top_category",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "missing_total_orders",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "duplicate_events_removed",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "rule_money_in_cents",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "rule_meta_block",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "rule_clean_csv",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "rule_sorted_keys_format",
+      "passed": false,
+      "detail": ""
+    }
+  ]
+}
